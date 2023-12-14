@@ -5,7 +5,6 @@ import { checkImageURL } from "../../../../utils";
 
 const PopularJobCard = ({ item, selectedJob, handleCardPress }) => {
 
-  console.log('ITEM >>>', item.job_country);
   
   return (
     <TouchableOpacity
