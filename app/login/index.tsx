@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,78 +11,44 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { COLORS, SIZES, icons } from "../../constants";
 import Auth from "../../components/auth/Auth";
+import Account from "../../components/auth/Account";
+import { Session } from "@supabase/supabase-js";
+import { supabase } from "../../supperbase/auth";
 
 const Login = () => {
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+  }, []);
+
+  console.log("session", session);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.lightWhite }}>
       <Stack.Screen
         options={{
           headerStyle: { backgroundColor: COLORS.lightWhite },
           headerShadowVisible: false,
-          headerTitle: "Login/Register",
+          headerTitle: `${
+            session && session.user ? "Update info" : "Login/Register"
+          }`,
         }}
       />
 
-      <Auth />
+      {session && session.user ? (
+        <Account key={session.user.id} session={session} />
+      ) : (
+        <Auth />
+      )}
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: SIZES.medium,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: SIZES.medium,
-  },
-  input: {
-    width: "100%",
-    height: 40,
-    borderColor: COLORS.gray,
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: SIZES.medium,
-    paddingHorizontal: SIZES.small,
-  },
-  loginButton: {
-    backgroundColor: COLORS.primary,
-    padding: SIZES.medium,
-    borderRadius: 5,
-    width: "100%",
-    alignItems: "center",
-  },
-  loginButtonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  googleContainer: {
-    marginTop: SIZES.medium,
-  },
-  googleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.white,
-    padding: SIZES.medium,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: COLORS.gray,
-  },
-  googleIcon: {
-    width: 20,
-    height: 20,
-    marginRight: SIZES.small,
-  },
-  googleButtonText: {
-    color: COLORS.secondary,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
 
 export default Login;

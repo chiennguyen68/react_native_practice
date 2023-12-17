@@ -9,6 +9,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  Alert,
 } from "react-native";
 import { COLORS, icons, images, SIZES } from "../constants";
 import { Stack, useRouter } from "expo-router";
@@ -18,13 +19,27 @@ import {
   ScreenHeaderBtn,
   Welcome,
 } from "../components";
+import { supabase } from "../supperbase/auth";
+import { Session } from "@supabase/supabase-js";
 
 const { width } = Dimensions.get("window");
 
 const Home = () => {
   const router = useRouter();
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+
   const animatedValue = new Animated.Value(0);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+  }, []);
 
   useEffect(() => {
     Animated.timing(animatedValue, {
@@ -46,6 +61,21 @@ const Home = () => {
     inputRange: [0, 1],
     outputRange: [width, width * 0.5],
   });
+
+  const clearSession = async () => {
+    const { error } = await supabase.auth.signOut();
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Logout", "You want to Logout?", [
+      {
+        text: "Cancel",
+        onPress: () => console.log("Cancel Pressed"),
+        style: "cancel",
+      },
+      { text: "OK", onPress: () => clearSession() },
+    ]);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.lightWhite }}>
@@ -124,23 +154,62 @@ const Home = () => {
               style={{ width: 20 }}
             />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              router.push(`/login`);
-            }}
-          >
-            <View
-              style={{
-                marginTop: 10,
-                padding: 10,
-                backgroundColor: COLORS.primary,
-                borderRadius: 5,
-                alignItems: "center",
+          {session && session.user ? (
+            <>
+              <TouchableOpacity
+                onPress={() => {
+                  router.push(`/login`);
+                }}
+              >
+                <View
+                  style={{
+                    marginTop: 10,
+                    padding: 10,
+                    backgroundColor: COLORS.tertiary,
+                    borderRadius: 5,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ color: "white" }}>Update info</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  handleLogout();
+                }}
+              >
+                <View
+                  style={{
+                    marginTop: 10,
+                    padding: 10,
+                    backgroundColor: COLORS.primary,
+                    borderRadius: 5,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ color: "white" }}>Logout</Text>
+                </View>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              onPress={() => {
+                router.push(`/login`);
               }}
             >
-              <Text style={{color:'white'}}>Login</Text>
-            </View>
-          </TouchableOpacity>
+              <View
+                style={{
+                  marginTop: 10,
+                  padding: 10,
+                  backgroundColor: COLORS.primary,
+                  borderRadius: 5,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "white" }}>Login</Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       </Animated.View>
     </SafeAreaView>
